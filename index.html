@@ -1,119 +1,142 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FORTNITE LOOTPOOL COMPARATOR</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-body{background:#0a0a0f;color:#fff;font-family:system-ui}
-.card{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03)}
-.card.selected{border-color:#00E5FF;box-shadow:0 0 15px rgba(0,229,255,.4)}
-.badge-rec{background:linear-gradient(90deg,#FFD700,#FFA500);color:#000;font-weight:900}
+body{background:#0a0a0f;color:#fff}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.card.sel{border-color:#FFD60A;box-shadow:0 0 18px rgba(255,214,10,.35)}
+.mode-active{background:#fff;color:#000!important;font-weight:900}
+.badge{ background: linear-gradient(90deg,#FFD60A,#FF8A00); color:#000; font-weight:900}
 </style>
 </head>
-<body class="p-4 max-w-7xl mx-auto">
-<header class="text-center mb-6">
-  <h1 class="text-3xl font-black">FORTNITE LOOTPOOL COMPARATOR</h1>
-  <p class="opacity-60">Compará el lootpool actual. Elegí tus armas. Encontrá el meta.</p>
-  <p class="text-xs mt-2 opacity-40">Temporada: Capítulo 5 Temp 4 | Última actualización: <span id="lastUpdate">24/09/2026</span></p>
-</header>
+<body class="max-w-7xl mx-auto px-4">
 
-<div class="flex justify-center gap-3 mb-6">
-  <button onclick="setMode('br')" id="btn-br" class="px-6 py-2 rounded bg-white text-black font-bold">BATTLE ROYALE</button>
-  <button onclick="setMode('reload')" id="btn-reload" class="px-6 py-2 rounded card">RECARGA</button>
-  <button onclick="setMode('blitz')" id="btn-blitz" class="px-6 py-2 rounded card">BLITZ</button>
+<nav class="flex justify-between items-center py-4 sticky top-0 z-50 bg-[#0a0a0f]/90 backdrop-blur">
+  <h1 class="font-black text-sm md:text-lg tracking-widest">FORTNITE LOOTPOOL COMPARATOR</h1>
+  <button onclick="toggleMenu()" class="text-xl border border-white/20 px-3 py-1 rounded">☰</button>
+</nav>
+
+<div id="sideMenu" class="hidden fixed inset-0 z-[60] bg-black/80">
+  <div class="absolute right-0 top-0 h-full w-72 bg-[#11111a] p-6 border-l border-white/10">
+    <button onclick="toggleMenu()" class="mb-8">✕ Cerrar</button>
+    <div class="flex flex-col gap-4 text-sm">
+      <button onclick="go('inicio')" class="text-left">Inicio</button>
+      <button onclick="go('lootpool')" class="text-left">Lootpool</button>
+      <button onclick="go('comparador')" class="text-left">Comparador</button>
+      <button onclick="go('destacado')" class="text-left">Loot destacado ⭐</button>
+      <button onclick="go('historial')" class="text-left">Historial</button>
+      <button onclick="go('como')" class="text-left">Cómo funciona</button>
+    </div>
+  </div>
 </div>
 
-<div class="flex flex-wrap gap-2 mb-4 justify-center text-xs">
-  <select id="filterCat" onchange="render()" class="bg-black border border-white/20 rounded px-3 py-1">
+<section id="sec-inicio" class="py-6">
+  <p class="opacity-60 text-center text-sm">Compará el lootpool actual. Elegí tus armas. Encontrá el meta.</p>
+  <p class="text-center text-[11px] opacity-40 mt-2">Temporada: <span id="season">Capítulo 5 Temp 4</span> | Última actualización: <span id="lastUpd">24/09/2026</span></p>
+</section>
+
+<div class="flex justify-center gap-2 mb-5">
+  <button onclick="setMode('br')" id="m-br" class="mode-active px-4 py-2 rounded-full text-xs">BATTLE ROYALE</button>
+  <button onclick="setMode('reload')" id="m-reload" class="card px-4 py-2 rounded-full text-xs">RECARGA</button>
+  <button onclick="setMode('blitz')" id="m-blitz" class="card px-4 py-2 rounded-full text-xs">BLITZ</button>
+</div>
+
+<section id="sec-lootpool">
+  <h2 class="font-black mb-3">LOOTPOOL</h2>
+  <select id="catFilter" onchange="renderLoot()" class="w-full md:w-64 bg-black border border-white/20 rounded px-3 py-2 text-xs mb-4">
     <option value="all">Todas las categorías</option>
     <option value="assault">Rifles de asalto</option><option value="smg">SMG</option><option value="shotgun">Escopetas</option>
-    <option value="sniper">Snipers</option><option value="explosive">Explosivos</option><option value="heal">Curaciones</option><option value="mobility">Movilidad</option>
+    <option value="sniper">Rifles de precisión / Snipers</option><option value="explosive">Explosivos</option>
+    <option value="other">Otras armas</option><option value="heal">Curaciones y escudos</option><option value="mobility">Movilidad</option>
   </select>
-  <button onclick="toggleRecOnly()" id="btnRec" class="px-3 py-1 rounded card">⭐ Ver solo recomendados</button>
-</div>
+  <div id="grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+</section>
 
-<div id="lootGrid" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8"></div>
+<section id="sec-comparador" class="hidden mt-10">
+  <h2 class="font-black mb-3">COMPARADOR</h2>
+  <div id="compareGrid" class="grid md:grid-cols-2 gap-4"></div>
+</section>
 
-<div id="compareBar" class="hidden fixed bottom-0 left-0 right-0 bg-black border-t border-cyan-400 p-3 flex justify-between items-center">
-  <span id="compareText" class="text-sm"></span>
-  <button onclick="showCompare()" class="bg-cyan-400 text-black font-black px-6 py-2 rounded">COMPARAR</button>
-</div>
+<section id="sec-destacado" class="hidden mt-10">
+  <h2 class="font-black mb-3">⭐ LOOT DESTACADO</h2>
+  <p class="text-xs opacity-60 mb-4">Selección de la web basada en estadísticas, utilidad y meta actual. No es una verdad absoluta.</p>
+  <div id="destGrid"></div>
+</section>
 
-<div id="compareView" class="hidden grid md:grid-cols-2 gap-4">
-  <div id="panelA" class="card rounded-xl p-3"></div>
-  <div id="panelB" class="card rounded-xl p-3"></div>
+<section id="sec-historial" class="hidden mt-10 text-sm opacity-70">HISTORIAL — Próximamente. Acá vas a poder ver temporadas anteriores sin borrar la DB.</section>
+<section id="sec-como" class="hidden mt-10 text-sm leading-6 opacity-80">
+  <h2 class="font-black mb-2">CÓMO FUNCIONA</h2>
+    1. Elegí un modo.<br>2. Elegí una categoría.<br>3. Seleccioná hasta 2 objetos (misma categoría).<br>4. Tocá COMPARAR.<br>5. Tocá + INFO para ver stats.<br><br>⭐ = Destacado de la temporada por modo. Se cambia con <code>featured: true</code> en los datos.
+</section>
+
+<div id="bar" class="hidden fixed bottom-0 left-0 right-0 bg-black border-t border-yellow-400 p-3 flex justify-between items-center z-50">
+  <span id="barTxt" class="text-xs"></span><button onclick="go('comparador'); doCompare()" class="bg-yellow-400 text-black font-black px-5 py-2 rounded-full text-xs">COMPARAR</button>
 </div>
 
 <script>
-// === BASE DE DATOS MODULAR - ACÁ CAMBIAS TODO SIN TOCAR HTML ===
+// ================== SISTEMA DE DATOS - SOLO EDITÁS ACÁ ==================
+const META = { season:"Capítulo 5 Temp 4", lastUpdate:"24/09/2026" }
 const DB = [
-  {id:"ar1", nombre:"Rifle A", modo:["br","reload","blitz"], categoria:"assault", rareza:"Legendario", recomendado:{br:true, reload:false, blitz:false}, imagen:"PLACEHOLDER_ar1.png", video:"video_ar1.mp4", stats:{dmg:35, head:70, crit:2, fireRate:5.5, mag:25, reload:2.2, falloff:"20-75m"}},
-  {id:"ar2", nombre:"Rifle B", modo:["br","reload"], categoria:"assault", rareza:"Épica", recomendado:{br:false, reload:true, blitz:false}, imagen:"PLACEHOLDER_ar2.png", video:"video_ar2.mp4", stats:{dmg:33, head:66, crit:2, fireRate:5.8, mag:30, reload:2.4, falloff:"20-70m"}},
-  {id:"smg1", nombre:"SMG Veloz", modo:["br","reload","blitz"], categoria:"smg", rareza:"Rara", recomendado:{br:true, reload:true, blitz:true}, imagen:"PLACEHOLDER_smg1.png", video:"video_smg1.mp4", stats:{dmg:20, head:40, crit:2, fireRate:9, mag:30, reload:1.8, falloff:"10-40m"}},
-  {id:"shot1", nombre:"Escopeta Táctica", modo:["br","blitz"], categoria:"shotgun", rareza:"Legendario", recomendado:{br:true, blitz:false}, imagen:"PLACEHOLDER_shot.png", video:"video_shot.mp4", stats:{dmg:85, head:127, crit:1.5, fireRate:1.2, mag:6, reload:4.5, falloff:"5-15m"}},
-  {id:"heal1", nombre:"Med Mist", modo:["br","reload","blitz"], categoria:"heal", rareza:"Rara", recomendado:{br:true, reload:true, blitz:true}, imagen:"PLACEHOLDER_heal.png", video:"", stats:{castTime:"3s", vida:75, escudo:0, movimiento:true, stack:3}},
-  {id:"mob1", nombre:"Shockwave", modo:["br","reload"], categoria:"mobility", rareza:"Épica", recomendado:{br:true, reload:false}, imagen:"PLACEHOLDER_mob.png", video:"", stats:{distancia:"15m", cargas:2, cooldown:"2s", caida:true, tags:["Defensivo","Rotación","Escape"]}}
+  {id:"ar1", name:"Fusil de Asalto Holo", mode:["br","reload","blitz"], category:"assault", rarity:"Legendario", image:"", video:"", available:true, featured:{br:true, reload:false, blitz:true}, stats:{dmg:36, head:72, fireRate:5.5, mag:25}},
+  {id:"ar2", name:"Fusil Striker", mode:["br","reload"], category:"assault", rarity:"Épica", image:"", video:"", available:true, featured:{br:false, reload:true, blitz:false}, stats:{dmg:33, head:66, fireRate:5.8, mag:30}},
+  {id:"ar3", name:"Fusil Fundido", mode:["br"], category:"assault", rarity:"Rara", image:"", video:"", available:true, featured:{br:false}, stats:{dmg:32, head:64, fireRate:6, mag:28}},
+  {id:"smg1", name:"SMG Trueno", mode:["br","reload","blitz"], category:"smg", rarity:"Legendario", image:"", video:"", available:true, featured:{br:true, reload:true, blitz:true}, stats:{dmg:20, head:40, fireRate:9, mag:30}},
+  {id:"shot1", name:"Escopeta Guardián", mode:["br","blitz"], category:"shotgun", rarity:"Legendario", image:"", video:"", available:true, featured:{br:true, blitz:true}, stats:{dmg:88, head:132, fireRate:1.1, mag:5}},
+  {id:"heal1", name:"Botiquín", mode:["br","reload","blitz"], category:"heal", rarity:"Común", image:"", video:"", available:true, featured:{br:true, reload:true, blitz:true}, stats:{cast:"4s", vida:100}},
+  {id:"mob1", name:"Bola de Choque", mode:["br","reload"], category:"mobility", rarity:"Épica", image:"", video:"", available:true, featured:{br:true, reload:false}, stats:{cargas:2, cd:"2s"}},
 ];
-
-let modoActual = "br";
-let seleccionados = [];
-let recOnly = false;
-
-function setMode(m){modoActual=m; document.querySelectorAll('[id^=btn-]').forEach(b=>b.className="px-6 py-2 rounded card"); document.getElementById('btn-'+m).className="px-6 py-2 rounded bg-white text-black font-bold"; render();}
-function toggleRecOnly(){recOnly=!recOnly; document.getElementById('btnRec').classList.toggle('bg-yellow-400'); document.getElementById('btnRec').classList.toggle('text-black'); render();}
-function calcDPS(s){ if(!s.dmg ||!s.fireRate) return "N/D"; return (s.dmg * s.fireRate).toFixed(1); }
-
-function render(){
-  const cat = document.getElementById('filterCat').value;
-  const grid = document.getElementById('lootGrid'); grid.innerHTML="";
-  DB.filter(i=> i.modo.includes(modoActual) && (cat==="all" || i.categoria===cat) && (!recOnly || i.recomendado[modoActual])).forEach(item=>{
-    const isSel = seleccionados.find(s=>s.id===item.id);
-    const isRec = item.recomendado[modoActual];
-    grid.innerHTML+=`
-    <div class="card rounded-xl p-3 ${isSel?'selected':''}">
-      <div class="aspect-[4/3] bg-black/50 rounded flex items-center justify-center text-[10px] opacity-40">TODO: ${item.imagen}</div>
-      <h3 class="font-bold mt-2 text-sm">${item.nombre} ${isRec?'⭐':''}</h3>
-      <p class="text-xs opacity-50">${item.rareza} • ${item.categoria}</p>
-      ${isRec?'<span class="badge-rec text-[10px] px-2 py-0.5 rounded mt-1 inline-block" title="Selección basada en estadísticas, utilidad y rendimiento dentro del meta actual.">⭐ RECOMENDADO DE LA TEMPORADA</span>':''}
-      <button onclick="selectItem('${item.id}')" class="w-full mt-2 text-xs py-1.5 rounded ${isSel?'bg-cyan-400 text-black':'bg-white/10'}">${isSel?'SELECCIONADO':'SELECCIONAR'}</button>
-    </div>`;
+let modo="br", sel=[];
+document.getElementById('season').innerText=META.season; document.getElementById('lastUpd').innerText=META.lastUpdate;
+function toggleMenu(){document.getElementById('sideMenu').classList.toggle('hidden')}
+function go(id){['inicio','lootpool','comparador','destacado','historial','como'].forEach(s=>document.getElementById('sec-'+s).classList.add('hidden')); document.getElementById('sec-'+id).classList.remove('hidden'); toggleMenu(); if(id==='lootpool') renderLoot(); if(id==='destacado') renderDest(); window.scrollTo(0,0)}
+function setMode(m){modo=m; ['br','reload','blitz'].forEach(x=>{document.getElementById('m-'+x).className= x===m? 'mode-active px-4 py-2 rounded-full text-xs' : 'card px-4 py-2 rounded-full text-xs'}); renderLoot(); renderDest();}
+function renderLoot(){
+  const cat=document.getElementById('catFilter').value; const g=document.getElementById('grid'); g.innerHTML="";
+  DB.filter(o=> o.available && o.mode.includes(modo) && (cat==='all' || o.category===cat)).forEach(o=>{
+    const isSel=sel.find(s=>s.id===o.id); const isFeat=o.featured[modo];
+    g.innerHTML+=`<div class="card rounded-xl p-3 ${isSel?'sel':''}">
+      <div class="aspect-[4/3] bg-white/[.06] rounded flex items-center justify-center text-[20px]">${o.name[0]}</div>
+      <h3 class="font-bold text-xs mt-2">${o.name} ${isFeat?'⭐':''}</h3><p class="text-[10px] opacity-50">${o.rarity} • ${o.category}</p>
+      ${isFeat?'<span class="badge text-[9px] px-2 py-0.5 rounded mt-1 inline-block">⭐ DESTACADO DE LA TEMPORADA</span>':''}
+      <button onclick="pick('${o.id}')" class="w-full mt-2 text-[11px] py-1.5 rounded ${isSel?'bg-yellow-400 text-black font-bold':'bg-white/10'}">${isSel?'SELECCIONADO':'SELECCIONAR'}</button></div>`;
   });
 }
-
-function selectItem(id){
-  const item = DB.find(i=>i.id===id);
-  if(seleccionados.find(s=>s.id===id)){ seleccionados = seleccionados.filter(s=>s.id!==id); }
-  else{
-    if(seleccionados.length>=2){ alert("Podés comparar solamente 2 objetos a la vez."); return; }
-    if(seleccionados.length===1 && seleccionados[0].categoria!==item.categoria){ alert("No permitido: solo podés comparar objetos de la misma categoría (AR vs AR, SMG vs SMG, etc.)"); return; }
-    seleccionados.push(item);
+function pick(id){
+  const o=DB.find(x=>x.id===id); const idx=sel.findIndex(s=>s.id===id);
+  if(idx>=0){sel.splice(idx,1);} else{
+    if(sel.length>=2){alert("Podés comparar solamente 2 objetos.");return}
+    if(sel.length===1 && sel[0].category!==o.category){alert("Solo podés comparar objetos de la misma categoría.");return}
+    sel.push(o);
   }
-  document.getElementById('compareBar').classList.toggle('hidden', seleccionados.length!==2);
-  document.getElementById('compareText').innerText = seleccionados.map(s=>s.nombre).join(' vs ');
-  render();
+  document.getElementById('bar').classList.toggle('hidden', sel.length!==2);
+  document.getElementById('barTxt').innerText= sel.map(s=>s.name).join(' vs ');
+  renderLoot(); if(sel.length===2) doCompare();
 }
-
-function showCompare(){
-  const view = document.getElementById('compareView'); view.classList.remove('hidden');
-  ['A','B'].forEach((p,i)=>{
-    const it = seleccionados[i]; if(!it) return;
-    document.getElementById('panel'+p).innerHTML=`
-      <div class="aspect-video bg-black rounded flex items-center justify-center text-xs">VIDEO: ${it.video || 'N/D'} - cargar solo cuando sea necesario</div>
-      <h3 class="font-black mt-2">${it.nombre} ${it.recomendado[modoActual]?'⭐':''}</h3>
-      <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-xs mt-2 bg-white/10 px-3 py-1 rounded">+ INFO</button>
-      <div class="hidden mt-2 text-xs opacity-80 space-y-1 font-mono">
-        ${it.categoria!=='heal' && it.categoria!=='mobility'? `
-          Daño cuerpo: ${it.stats.dmg?? 'N/D'}<br>Daño cabeza: ${it.stats.head?? 'N/D'}<br>Crítico: ${it.stats.crit?? 'N/D'}x<br>Cadencia: ${it.stats.fireRate?? 'N/D'}<br>DPS: ${calcDPS(it.stats)}<br>Cargador: ${it.stats.mag?? 'N/D'}<br>Recarga: ${it.stats.reload?? 'N/D'}s<br>Fall-off: ${it.stats.falloff?? 'N/D'}<br>Rareza: ${it.rareza}
-        `:''}
-        ${it.categoria==='heal'?`Cast: ${it.stats.castTime?? 'N/D'}<br>Vida: ${it.stats.vida?? 'N/D'}<br>Escudo: ${it.stats.escudo?? 'N/D'}<br>Movimiento: ${it.stats.movimiento?'Sí':'No'}<br>Stack: ${it.stats.stack?? 'N/D'}`:''}
-        ${it.categoria==='mobility'?`Distancia: ${it.stats.distancia?? 'N/D'}<br>Cargas: ${it.stats.cargas?? 'N/D'}<br>Cooldown: ${it.stats.cooldown?? 'N/D'}<br>Anti-caída: ${it.stats.caida?'Sí':'No'}<br>Tags: ${(it.stats.tags||[]).join(', ')||'N/D'}`:''}
-      </div>
-    `;
+function doCompare(){
+  const g=document.getElementById('compareGrid'); g.innerHTML="";
+  sel.forEach(o=>{
+    const dps=o.stats.dmg && o.stats.fireRate? (o.stats.dmg*o.stats.fireRate).toFixed(1) : 'N/D';
+    g.innerHTML+=`<div class="card rounded-xl p-3">
+      <div class="aspect-video bg-black rounded flex items-center justify-center text-[11px] opacity-50" loading="lazy">${o.video? 'Video cargado al comparar' : 'Video N/D'}</div>
+      <h3 class="font-black mt-2 text-sm">${o.name} ${o.featured[modo]?'⭐':''}</h3>
+      <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-[11px] mt-2 bg-white/10 px-3 py-1 rounded">+ INFO</button>
+      <div class="hidden mt-2 text-[11px] font-mono opacity-80">Daño: ${o.stats.dmg??'N/D'}<br>DPS: ${dps}<br>Rareza: ${o.rarity}<br>Stats: ${JSON.stringify(o.stats)}</div></div>`;
   });
-  view.scrollIntoView({behavior:'smooth'});
 }
-render();
+function renderDest(){
+  const g=document.getElementById('destGrid'); g.innerHTML="";
+  const cats=[...new Set(DB.map(o=>o.category))];
+  cats.forEach(c=>{
+    const feats=DB.filter(o=> o.mode.includes(modo) && o.category===c && o.featured[modo]);
+    if(!feats.length) return;
+    g.innerHTML+=`<h3 class="mt-6 mb-2 font-bold text-xs uppercase opacity-60">${c}</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-3">`+
+    feats.map(o=>`<div class="card rounded-xl p-3"><div class="aspect-[4/3] bg-white/[.06] rounded flex items-center justify-center">${o.name[0]}</div><p class="text-xs mt-2 font-bold">${o.name} ⭐</p><button onclick="pick('${o.id}'); go('comparador'); doCompare()" class="w-full mt-2 text-[11px] bg-yellow-400 text-black font-bold py-1 rounded">COMPARAR</button></div>`).join('')+`</div>`;
+  });
+}
+renderLoot();
 </script>
 </body>
 </html>
